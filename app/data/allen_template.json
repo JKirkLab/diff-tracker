@@ -1,0 +1,106 @@
+{
+  "id": "allen_protocol_v1",
+  "name": "Allen Institute Template",
+  "description": "Allen Institute Protocol Template",
+
+  "steps": [
+    {
+        "id": "start",
+        "name": "Start Differentiation",
+        "description": "Replace media with 3 mL ADM + CHIR (7.5 uM)"
+    },
+    {
+        "id": "step_1",
+        "name": "First media change",
+        "description": "Replace media with 3 mL ADM + IWP2 (5 uM) Allen Institute recommends that it be 48 hrs +/- 15 minutes or less."
+    },
+    {
+        "id": "step_2",
+        "name": "Second media change",
+        "description": "Replace media with 3 mL RPMI + B27(+) + Pen/Strep"
+    },
+    {
+        "id": "step_3",
+        "name": "Third media change",
+        "description": "Replace media with 3 mL RPMI + B27(+) + Pen/Strep"
+    },
+    {
+        "id": "step_4",
+        "name": "Media change every other day (1)",
+        "description": "Media change every other day RPMI + B27 (+ insulin) + Pen/Strep"
+    },
+    {
+        "id": "step_5",
+        "name": "Media change every other day (2)",
+        "description": "Media change every other day RPMI + B27 (+ insulin) + Pen/Strep"
+    },
+    {
+        "id": "step_6",
+        "name": "Media change every other day (3)",
+        "description": "Media change every other day RPMI + B27 (+ insulin) + Pen/Strep"
+    },
+    {
+        "id": "step_7",
+        "name": "Media change every other day (4)",
+        "description": "Media change every other day RPMI + B27 (+ insulin) + Pen/Strep"
+    },
+    {
+        "id": "step_8",
+        "name": "Split diff cells",
+        "description": "Split the diff cells 1:1 ratio"
+    },
+    {
+        "id": "step_9",
+        "name": "Selection Process",
+        "description": "Start selection process with Lactate purification"
+    }
+  ],
+
+  "edges": [
+    {
+        "from": "start",
+        "to": "step_1",
+        "days": 2
+    },
+    {
+        "from": "step_1",
+        "to": "step_2",
+        "days": 2
+    },
+    {
+        "from": "step_2",
+        "to": "step_3",
+        "days": 2
+    },
+    {
+        "from": "step_3",
+        "to": "step_4",
+        "days": 2
+    },
+    {
+        "from": "step_4",
+        "to": "step_5",
+        "days": 2
+    },
+    {
+        "from": "step_5",
+        "to": "step_6",
+        "days": 2
+    },
+    {
+        "from": "step_6",
+        "to": "step_7",
+        "days": 2
+    },
+    {
+        "from": "step_7",
+        "to": "step_8",
+        "days": 1
+    },
+    {
+        "from": "step_8",
+        "to": "step_9",
+        "days": 5
+    }
+  ]
+}
