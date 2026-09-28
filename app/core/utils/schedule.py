@@ -1,35 +1,31 @@
-import json
-from datetime import date, timedelta
-from pathlib import Path
+from datetime import timedelta
+
+from app.core.models.experiment import ScheduleEntry
+from app.core.models.protocol import Protocol
 
 
-def load_protocol(path: Path | str) -> dict:
-    with open(path) as f:
-        return json.load(f)
+def compute_schedule(protocol: Protocol, start_date) -> list[ScheduleEntry]:
+    """Walk the protocol DAG and return one ScheduleEntry per step, in order."""
+    edge_map = {e.source: e for e in protocol.dag.edges}
 
-
-def compute_schedule(protocol: dict, start_date: date) -> list[dict]:
-    """Walk the edge graph and return [{step, date, day_number}, ...] in order."""
-    steps = {s["id"]: s for s in protocol["steps"]}
-    edges = {e["from"]: e for e in protocol["edges"]}
-
-    schedule = []
+    entries: list[ScheduleEntry] = []
     current_id = "start"
     current_date = start_date
 
     while current_id:
-        schedule.append(
-            {
-                "step": steps[current_id],
-                "date": current_date,
-                "day_number": (current_date - start_date).days,
-            }
+        step = protocol.dag.steps[current_id]
+        entries.append(
+            ScheduleEntry(
+                step=step,
+                date=current_date,
+                day_number=(current_date - start_date).days,
+            )
         )
-        if current_id in edges:
-            edge = edges[current_id]
-            current_date = current_date + timedelta(days=edge["days"])
-            current_id = edge["to"]
+        if current_id in edge_map:
+            edge = edge_map[current_id]
+            current_date = current_date + timedelta(days=edge.days)
+            current_id = edge.target
         else:
             break
 
-    return schedule
+    return entries

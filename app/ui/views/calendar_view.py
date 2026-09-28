@@ -13,6 +13,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.core.models.experiment import ScheduleEntry
+
 # Step colours cycle through this palette
 STEP_COLORS = [
     ("#2563EB", "#EFF6FF"),  # blue
@@ -24,7 +26,7 @@ STEP_COLORS = [
 
 
 class DayCell(QFrame):
-    def __init__(self, day_num: int, steps: list[dict], is_today: bool = False):
+    def __init__(self, day_num: int, steps: list[ScheduleEntry], is_today: bool = False):
         super().__init__()
         self.setMinimumSize(110, 80)
 
@@ -44,11 +46,11 @@ class DayCell(QFrame):
         layout.addWidget(num_label)
 
         for entry in steps:
-            idx = entry["day_number"] % len(STEP_COLORS)
+            idx = entry.day_number % len(STEP_COLORS)
             fg, bg = STEP_COLORS[idx]
-            chip = QLabel(f"D{entry['day_number']} · {entry['step']['name']}")
+            chip = QLabel(f"D{entry.day_number} · {entry.step.name}")
             chip.setWordWrap(True)
-            chip.setToolTip(entry["step"]["description"])
+            chip.setToolTip(entry.step.description)
             chip.setFont(QFont("", 7))
             chip.setStyleSheet(
                 f"background: {bg}; color: {fg}; border: 1px solid {fg};"
@@ -67,17 +69,17 @@ class DayCell(QFrame):
 
 
 class CalendarView(QWidget):
-    def __init__(self, schedule: list[dict], start_date: date, parent=None):
+    def __init__(self, schedule: list[ScheduleEntry], start_date: date, parent=None):
         super().__init__(parent)
         self.schedule = schedule
         self.start_date = start_date
         self.current_year = start_date.year
         self.current_month = start_date.month
 
-        # date → list of step entries
-        self._date_index: dict[date, list[dict]] = {}
+        # date → list of ScheduleEntry
+        self._date_index: dict[date, list[ScheduleEntry]] = {}
         for entry in schedule:
-            self._date_index.setdefault(entry["date"], []).append(entry)
+            self._date_index.setdefault(entry.date, []).append(entry)
 
         self._build_shell()
         self._render()

@@ -1,5 +1,4 @@
 import sys
-from pathlib import Path
 
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
@@ -12,15 +11,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from app.core.utils.schedule import compute_schedule, load_protocol
+from app.core.protocols.loader import load_protocol
+from app.core.utils.schedule import compute_schedule
 from app.ui.dialogs.start_dialog import StartDiffDialog
 from app.ui.views.calendar_view import CalendarView
 
-DATA_DIR = Path(__file__).parent / "data"
-
 
 class MainWindow(QMainWindow):
-    def __init__(self, protocol: dict, schedule: list[dict], start_date):
+    def __init__(self, protocol, schedule, start_date):
         super().__init__()
         self.setWindowTitle("Diff Tracker")
         self.setMinimumSize(1000, 680)
@@ -33,7 +31,7 @@ class MainWindow(QMainWindow):
 
         # Title row
         title_row = QHBoxLayout()
-        name_lbl = QLabel(protocol["name"])
+        name_lbl = QLabel(protocol.name)
         f = QFont()
         f.setPointSize(16)
         f.setBold(True)
@@ -41,7 +39,7 @@ class MainWindow(QMainWindow):
 
         meta_lbl = QLabel(
             f"Started {start_date.strftime('%B %d, %Y')}  ·  {len(schedule)} steps  ·  "
-            f"Day 0 → Day {schedule[-1]['day_number']}"
+            f"Day 0 → Day {schedule[-1].day_number}"
         )
         meta_lbl.setStyleSheet("color: #64748B;")
 
@@ -50,15 +48,12 @@ class MainWindow(QMainWindow):
         title_row.addWidget(meta_lbl)
         root.addLayout(title_row)
 
-        # Divider
         line = QWidget()
         line.setFixedHeight(1)
         line.setStyleSheet("background: #E2E8F0;")
         root.addWidget(line)
 
-        # Calendar
-        calendar = CalendarView(schedule, start_date)
-        root.addWidget(calendar, 1)
+        root.addWidget(CalendarView(schedule, start_date), 1)
 
 
 def main():
@@ -66,9 +61,9 @@ def main():
     app.setStyle("Fusion")
     app.setFont(QFont("Inter", 10))
 
-    protocol = load_protocol(DATA_DIR / "allen_template.json")
+    protocol = load_protocol("allen")
 
-    dialog = StartDiffDialog(protocol["name"])
+    dialog = StartDiffDialog(protocol.name)
     if dialog.exec() != QDialog.Accepted:
         sys.exit(0)
 
