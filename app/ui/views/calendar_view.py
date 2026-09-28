@@ -1,176 +1,186 @@
-import calendar
 from datetime import date
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtCore import QDate, Qt
+from PySide6.QtGui import QColor, QFont, QTextCharFormat
 from PySide6.QtWidgets import (
+    QCalendarWidget,
     QFrame,
-    QGridLayout,
     QHBoxLayout,
     QLabel,
-    QPushButton,
+    QScrollArea,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 
 from app.core.models.experiment import ScheduleEntry
 
-# Step colours cycle through this palette
-STEP_COLORS = [
-    ("#2563EB", "#EFF6FF"),  # blue
-    ("#059669", "#ECFDF5"),  # green
-    ("#D97706", "#FFFBEB"),  # amber
-    ("#7C3AED", "#F5F3FF"),  # violet
-    ("#DC2626", "#FEF2F2"),  # red
-]
+# step highlight: modern orange
+_STEP_BG      = "#FFEDD5"
+_STEP_FG      = "#EA580C"
+_STEP_BG_BUSY = "#FED7AA"   # 2+ diffs on same day — slightly deeper
+_STEP_FG_BUSY = "#C2410C"
 
-
-class DayCell(QFrame):
-    def __init__(self, day_num: int, steps: list[ScheduleEntry], is_today: bool = False):
-        super().__init__()
-        self.setMinimumSize(110, 80)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(6, 4, 6, 4)
-        layout.setSpacing(3)
-
-        # Day number
-        num_label = QLabel(str(day_num))
-        num_label.setAlignment(Qt.AlignRight | Qt.AlignTop)
-        f = QFont()
-        f.setPointSize(9)
-        if is_today:
-            f.setBold(True)
-        num_label.setFont(f)
-        num_label.setStyleSheet("color: #1e293b;" if not is_today else "color: #2563EB;")
-        layout.addWidget(num_label)
-
-        for entry in steps:
-            idx = entry.day_number % len(STEP_COLORS)
-            fg, bg = STEP_COLORS[idx]
-            chip = QLabel(f"D{entry.day_number} · {entry.step.name}")
-            chip.setWordWrap(True)
-            chip.setToolTip(entry.step.description)
-            chip.setFont(QFont("", 7))
-            chip.setStyleSheet(
-                f"background: {bg}; color: {fg}; border: 1px solid {fg};"
-                " border-radius: 3px; padding: 2px 4px;"
-            )
-            layout.addWidget(chip)
-
-        layout.addStretch()
-
-        border = "#93C5FD" if is_today else "#E2E8F0"
-        bg_fill = "#EFF6FF" if is_today else "#FFFFFF"
-        self.setStyleSheet(
-            f"QFrame {{ background: {bg_fill}; border: 1px solid {border};"
-            " border-radius: 6px; }}"
-        )
+DIFF_COLORS = ["#2563EB", "#059669", "#D97706", "#7C3AED", "#DC2626"]
 
 
 class CalendarView(QWidget):
-    def __init__(self, schedule: list[ScheduleEntry], start_date: date, parent=None):
+    """
+    Unified calendar across all active diffs.
+    diffs: list of {"name": str, "schedule": list[ScheduleEntry]}
+    """
+
+    def __init__(self, diffs: list[dict], parent=None):
         super().__init__(parent)
-        self.schedule = schedule
-        self.start_date = start_date
-        self.current_year = start_date.year
-        self.current_month = start_date.month
 
-        # date → list of ScheduleEntry
-        self._date_index: dict[date, list[ScheduleEntry]] = {}
-        for entry in schedule:
-            self._date_index.setdefault(entry.date, []).append(entry)
+        # date → list of (diff_name, diff_color_fg, entry)
+        self._index: dict[date, list[tuple[str, str, ScheduleEntry]]] = {}
+        for i, diff in enumerate(diffs):
+            fg = DIFF_COLORS[i % len(DIFF_COLORS)]
+            for entry in diff["schedule"]:
+                self._index.setdefault(entry.date, []).append(
+                    (diff["name"], fg, entry)
+                )
 
-        self._build_shell()
-        self._render()
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
 
-    # ------------------------------------------------------------------
-    def _build_shell(self):
-        root = QVBoxLayout(self)
-        root.setSpacing(8)
-        root.setContentsMargins(0, 0, 0, 0)
+        # ── calendar widget ───────────────────────────────────────────────
+        self._cal = QCalendarWidget()
+        self._cal.setGridVisible(True)
+        self._cal.setVerticalHeaderFormat(QCalendarWidget.NoVerticalHeader)
+        self._cal.setFirstDayOfWeek(Qt.Monday)
+        self._cal.setStyleSheet("""
+            QCalendarWidget QAbstractItemView {
+                background: #FFFFFF;
+                color: #0F172A;
+                selection-background-color: #3B82F6;
+                selection-color: #FFFFFF;
+                font-size: 11pt;
+                outline: none;
+                gridline-color: #E2E8F0;
+            }
+            QCalendarWidget QAbstractItemView:disabled { color: #CBD5E1; }
+            QCalendarWidget QWidget#qt_calendar_navigationbar {
+                background: #FFFFFF;
+                padding: 6px 4px;
+            }
+            QCalendarWidget QToolButton {
+                color: #0F172A;
+                background: transparent;
+                font-size: 13pt;
+                font-weight: 600;
+                border: none;
+                border-radius: 6px;
+                padding: 4px 10px;
+            }
+            QCalendarWidget QToolButton:hover { background: #F1F5F9; }
+            QCalendarWidget QToolButton::menu-indicator { image: none; width: 0; }
+            QCalendarWidget QMenu {
+                background: #FFFFFF;
+                color: #0F172A;
+                border: 1px solid #E2E8F0;
+                border-radius: 8px;
+            }
+            QCalendarWidget QSpinBox {
+                color: #0F172A;
+                background: #FFFFFF;
+                border: none;
+                font-size: 13pt;
+            }
+        """)
 
-        # Nav header
-        nav = QHBoxLayout()
-        self._prev_btn = QPushButton("‹")
-        self._prev_btn.setFixedSize(28, 28)
-        self._prev_btn.setCursor(Qt.PointingHandCursor)
-        self._prev_btn.clicked.connect(self._prev_month)
+        # remove default red weekends
+        plain = QTextCharFormat()
+        plain.setForeground(QColor("#0F172A"))
+        self._cal.setWeekdayTextFormat(Qt.Saturday, plain)
+        self._cal.setWeekdayTextFormat(Qt.Sunday, plain)
 
-        self._month_lbl = QLabel()
-        self._month_lbl.setAlignment(Qt.AlignCenter)
-        f = QFont()
-        f.setPointSize(13)
-        f.setBold(True)
-        self._month_lbl.setFont(f)
+        # highlight step dates in orange; busier dates get slightly deeper
+        for d, entries in self._index.items():
+            fmt = QTextCharFormat()
+            if len(entries) == 1:
+                fmt.setBackground(QColor(_STEP_BG))
+                fmt.setForeground(QColor(_STEP_FG))
+            else:
+                fmt.setBackground(QColor(_STEP_BG_BUSY))
+                fmt.setForeground(QColor(_STEP_FG_BUSY))
+            fmt.setFontWeight(700)
+            self._cal.setDateTextFormat(QDate(d.year, d.month, d.day), fmt)
 
-        self._next_btn = QPushButton("›")
-        self._next_btn.setFixedSize(28, 28)
-        self._next_btn.setCursor(Qt.PointingHandCursor)
-        self._next_btn.clicked.connect(self._next_month)
+        layout.addWidget(self._cal)
 
-        nav.addWidget(self._prev_btn)
-        nav.addWidget(self._month_lbl, 1)
-        nav.addWidget(self._next_btn)
-        root.addLayout(nav)
+        # ── detail panel ─────────────────────────────────────────────────
+        self._detail_scroll = QScrollArea()
+        self._detail_scroll.setFrameShape(QScrollArea.NoFrame)
+        self._detail_scroll.setWidgetResizable(True)
+        self._detail_scroll.setFixedHeight(140)
+        self._detail_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self._detail_scroll.setStyleSheet(
+            "background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px;"
+        )
 
-        # Weekday header row
-        dow_row = QHBoxLayout()
-        dow_row.setSpacing(4)
-        for name in ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]:
-            lbl = QLabel(name)
-            lbl.setAlignment(Qt.AlignCenter)
-            lbl.setFixedHeight(20)
-            lbl.setFont(QFont("", 8))
-            lbl.setStyleSheet("color: #64748B; font-weight: 600;")
-            dow_row.addWidget(lbl, 1)
-        root.addLayout(dow_row)
+        self._detail_widget = QWidget()
+        self._detail_widget.setStyleSheet("background: transparent;")
+        self._detail_layout = QVBoxLayout(self._detail_widget)
+        self._detail_layout.setContentsMargins(14, 12, 14, 12)
+        self._detail_layout.setSpacing(8)
+        self._detail_scroll.setWidget(self._detail_widget)
+        layout.addWidget(self._detail_scroll)
 
-        # Grid container (replaced each render)
-        self._grid_container = QWidget()
-        self._grid_layout = QGridLayout(self._grid_container)
-        self._grid_layout.setSpacing(4)
-        root.addWidget(self._grid_container)
+        self._cal.selectionChanged.connect(self._on_select)
+        self._cal.setSelectedDate(QDate.currentDate())
+        self._on_select()
 
-    def _render(self):
-        # Clear
-        while self._grid_layout.count():
-            item = self._grid_layout.takeAt(0)
+    def _clear_detail(self):
+        while self._detail_layout.count():
+            item = self._detail_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
-        self._month_lbl.setText(
-            date(self.current_year, self.current_month, 1).strftime("%B %Y")
-        )
+    def _on_select(self):
+        self._clear_detail()
+        qd = self._cal.selectedDate()
+        d = date(qd.year(), qd.month(), qd.day())
+        entries = self._index.get(d)
 
-        today = date.today()
-        weeks = calendar.monthcalendar(self.current_year, self.current_month)
+        if not entries:
+            lbl = QLabel("No steps scheduled — select a highlighted date to see what's due.")
+            lbl.setStyleSheet("color: #CBD5E1; font-size: 10pt;")
+            self._detail_layout.addWidget(lbl)
+            return
 
-        for row, week in enumerate(weeks):
-            for col, day in enumerate(week):
-                if day == 0:
-                    placeholder = QFrame()
-                    placeholder.setMinimumSize(110, 80)
-                    self._grid_layout.addWidget(placeholder, row, col)
-                else:
-                    d = date(self.current_year, self.current_month, day)
-                    cell = DayCell(
-                        day_num=day,
-                        steps=self._date_index.get(d, []),
-                        is_today=(d == today),
-                    )
-                    self._grid_layout.addWidget(cell, row, col)
+        date_hdr = QLabel(d.strftime("%B %d, %Y"))
+        f = QFont()
+        f.setPointSize(11)
+        f.setBold(True)
+        date_hdr.setFont(f)
+        date_hdr.setStyleSheet("color: #0F172A;")
+        self._detail_layout.addWidget(date_hdr)
 
-    def _prev_month(self):
-        if self.current_month == 1:
-            self.current_month, self.current_year = 12, self.current_year - 1
-        else:
-            self.current_month -= 1
-        self._render()
+        for diff_name, fg, entry in entries:
+            row = QHBoxLayout()
+            row.setSpacing(10)
 
-    def _next_month(self):
-        if self.current_month == 12:
-            self.current_month, self.current_year = 1, self.current_year + 1
-        else:
-            self.current_month += 1
-        self._render()
+            dot = QFrame()
+            dot.setFixedSize(8, 8)
+            dot.setStyleSheet(
+                f"background:{fg}; border-radius:4px;"
+            )
+            dot.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+            name_lbl = QLabel(f"<b>{diff_name}</b>  ·  Day {entry.day_number}  ·  {entry.step.name}")
+            name_lbl.setStyleSheet("color: #0F172A; font-size: 10pt;")
+            name_lbl.setToolTip(entry.step.description)
+
+            row.addWidget(dot, 0, Qt.AlignVCenter)
+            row.addWidget(name_lbl)
+            row.addStretch()
+
+            wrapper = QWidget()
+            wrapper.setStyleSheet("background: transparent;")
+            wrapper.setLayout(row)
+            self._detail_layout.addWidget(wrapper)
+
+        self._detail_layout.addStretch()
