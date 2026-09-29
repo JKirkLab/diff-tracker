@@ -94,13 +94,17 @@ class MainWindow(QMainWindow):
         )
 
         self._calendar = CalendarView(self._diffs)
-        self._diff_list = DiffListPanel(self._diffs)
+        self._diff_list = DiffListPanel(self._diffs, on_save=self._on_diff_saved)
 
         self._splitter.addWidget(self._calendar)
         self._splitter.addWidget(self._diff_list)
         self._splitter.setSizes([500, 650])
 
         root.addWidget(self._splitter, 1)
+
+    def _on_diff_saved(self):
+        self._diffs = load_experiments()
+        self._rebuild_panels()
 
     def _rebuild_panels(self):
         # detach and schedule deletion of all current splitter children
@@ -109,7 +113,7 @@ class MainWindow(QMainWindow):
             w.setParent(None)
             w.deleteLater()
         self._calendar = CalendarView(self._diffs)
-        self._diff_list = DiffListPanel(self._diffs)
+        self._diff_list = DiffListPanel(self._diffs, on_save=self._on_diff_saved)
         self._splitter.addWidget(self._calendar)
         self._splitter.addWidget(self._diff_list)
         self._splitter.setSizes([500, 650])

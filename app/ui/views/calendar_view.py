@@ -156,7 +156,7 @@ class CalendarView(QWidget):
         f.setPointSize(13)
         f.setBold(True)
         date_hdr.setFont(f)
-        date_hdr.setStyleSheet("color: #0F172A;")
+        date_hdr.setStyleSheet("color: #0F172A; border: none;")
         self._detail_layout.addWidget(date_hdr)
 
         for diff_name, fg, entry in entries:
@@ -168,11 +168,11 @@ class CalendarView(QWidget):
 
             dot = QFrame()
             dot.setFixedSize(8, 8)
-            dot.setStyleSheet(f"background:{fg}; border-radius:4px;")
+            dot.setStyleSheet(f"background:{fg}; border-radius:4px; border:none;")
             dot.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
             name_lbl = QLabel(f"<b>{diff_name}</b>  ·  Day {entry.day_number}  ·  {entry.step.name}")
-            name_lbl.setStyleSheet("color: #0F172A; font-size: 12pt;")
+            name_lbl.setStyleSheet("color: #0F172A; font-size: 12pt; border: none;")
 
             row.addWidget(dot, 0, Qt.AlignVCenter)
             row.addWidget(name_lbl)
@@ -181,12 +181,12 @@ class CalendarView(QWidget):
 
             if entry.step.description:
                 desc_lbl = QLabel(entry.step.description)
-                desc_lbl.setStyleSheet("color: #64748B; font-size: 11pt; padding-left: 18px;")
+                desc_lbl.setStyleSheet("color: #64748B; font-size: 11pt; padding-left: 18px; border: none;")
                 desc_lbl.setWordWrap(True)
                 block.addWidget(desc_lbl)
 
             wrapper = QWidget()
-            wrapper.setStyleSheet("background: transparent;")
+            wrapper.setStyleSheet("background: transparent; border: none;")
             wrapper.setLayout(block)
             self._detail_layout.addWidget(wrapper)
 

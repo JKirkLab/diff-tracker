@@ -71,16 +71,17 @@ def load_experiments() -> list[dict]:
             (today,),
         ).fetchall()
 
-        for exp_id, exp_name, protocol_id, start_date_str, end_date_str in rows:
+        for exp_id, exp_name, protocol_id, start_date_str in rows:
             steps = {}
             edges = []
-            for step_id, step_name, desc in conn.execute("SELECT step_id, name, description FROM experiment_steps WHERE experiment_id = ?",
-                (exp_id)):
+            for step_id, step_name, desc in conn.execute(
+                "SELECT step_id, name, description FROM experiment_steps WHERE experiment_id = ?",
+                (exp_id,)):
                 steps[step_id] = Step(id= step_id, name = step_name, description = desc)
 
             for source, target, days in conn.execute(
                 "SELECT source_step_id, target_step_id, days FROM experiment_edges WHERE experiment_id = ?",
-                (exp_id),
+                (exp_id,)
             ):
                 edges.append(Edge(source = source, target = target, days = days))
 
@@ -90,6 +91,7 @@ def load_experiments() -> list[dict]:
             protocol = Protocol(id = protocol_id, name = exp_name, description = "", dag = dag)
             schedule = compute_schedule(protocol, start)
             diffs.append({
+                "id": exp_id,
                 "name": exp_name,
                 "protocol": protocol,
                 "schedule": schedule,
@@ -97,3 +99,24 @@ def load_experiments() -> list[dict]:
             })
 
     return diffs
+
+
+def update_experiment_edges(exp_id, updated_dates):
+
+    step_id, delta = updated_dates
+    note = f"Changed by {delta:+d} days on {date.today().isoformat()}"
+    with sqlite3.connect(get_db_path()) as conn:
+        conn.execute(
+            """
+            UPDATE experiment_edges
+            SET days = days + ?,
+            notes = ?
+            WHERE experiment_id = ?
+            AND target_step_id = ?
+            """,
+            (delta, note, exp_id, step_id )
+        )
+        conn.execute(
+            "UPDATE experiments SET end_date = date(end_date, ? || ' days') WHERE id = ?",
+            (str(delta), exp_id),
+        )

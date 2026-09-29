@@ -74,7 +74,7 @@ class TimelineView(QScrollArea):
             wt       = "600"     if done else "400"
             desc_col = "#64748B" if done else "#CBD5E1"
             lw       = _STEP_W - 12
-            lx       = x - lw // 2
+            lx       = max(0, min(x - lw // 2, total_w - lw))
 
             if i % 2 == 0:
                 # stack upward from just above the dot

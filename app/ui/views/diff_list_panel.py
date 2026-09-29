@@ -15,15 +15,18 @@ from PySide6.QtWidgets import (
 )
 
 from app.ui.dialogs.edit_diff_dialog import EditDiffDialog
+from app.ui.dialogs.well_plate_dialog import WellPlateDialog
 from app.ui.views.timeline_view import TimelineView
+from app.data.repositories import update_experiment_edges
 
 DIFF_COLORS = ["#2563EB", "#059669", "#D97706", "#7C3AED", "#DC2626"]
 
 
 class CollapsibleDiffItem(QFrame):
-    def __init__(self, diff: dict, color: str, parent=None):
+    def __init__(self, diff: dict, color: str, on_save=None, parent=None):
         super().__init__(parent)
         self._diff = diff
+        self._on_save = on_save
         self.setStyleSheet(
             "QFrame { background:#FFFFFF; border:1px solid #E2E8F0;"
             " border-radius:10px; }"
@@ -44,7 +47,7 @@ class CollapsibleDiffItem(QFrame):
         header.setSpacing(10)
 
         self._arrow = QLabel("▶")
-        self._arrow.setStyleSheet(f"color:{color}; font-size:10pt;")
+        self._arrow.setStyleSheet(f"color:{color}; font-size:10pt; border:none;")
         self._arrow.setFixedWidth(16)
 
         name_lbl = QLabel(diff["name"])
@@ -60,23 +63,33 @@ class CollapsibleDiffItem(QFrame):
             " border-radius:4px; padding:1px 8px; font-size:10pt; font-weight:600;"
         )
 
-        edit_btn = QPushButton("Edit")
-        edit_btn.setFixedHeight(26)
-        edit_btn.setCursor(Qt.PointingHandCursor)
-        edit_btn.setStyleSheet("""
+        _btn_style = """
             QPushButton {
                 background: transparent; color: #94A3B8;
                 border: 1px solid #E2E8F0; border-radius: 6px;
                 padding: 0 10px; font-size: 9pt;
             }
             QPushButton:hover { color: #3B82F6; border-color: #3B82F6; }
-        """)
+        """
+
+        edit_btn = QPushButton("Edit")
+        edit_btn.setFixedHeight(26)
+        edit_btn.setCursor(Qt.PointingHandCursor)
+        edit_btn.setStyleSheet(_btn_style)
         edit_btn.clicked.connect(self._open_edit)
+
+        wells_btn = QPushButton("Wells")
+        wells_btn.setFixedHeight(26)
+        wells_btn.setCursor(Qt.PointingHandCursor)
+        wells_btn.setStyleSheet(_btn_style)
+        wells_btn.clicked.connect(self._open_wells)
 
         header.addWidget(self._arrow)
         header.addWidget(name_lbl)
         header.addStretch()
         header.addWidget(edit_btn)
+        header.addSpacing(4)
+        header.addWidget(wells_btn)
         header.addSpacing(6)
         header.addWidget(day_badge)
         self._root.addLayout(header)
@@ -149,12 +162,19 @@ class CollapsibleDiffItem(QFrame):
             widget.mousePressEvent = lambda _e: self._toggle()
         self.mousePressEvent = lambda _e: self._toggle()
 
+    def _open_wells(self):
+        dialog = WellPlateDialog(self._diff, parent=self)
+        if dialog.exec():
+            # wire backend here: dialog.all_plates() → [{well_id: note}, ...]
+            pass
+
     def _open_edit(self):
         dialog = EditDiffDialog(self._diff, self)
         if dialog.exec():
-            # updated_dates() available for backend wiring:
-            # dialog.updated_dates() → [(step_id, new_date), ...]
-            pass 
+            edit_res = dialog.edit_result()
+            if edit_res and self._on_save:
+                update_experiment_edges(self._diff["id"], edit_res)
+                self._on_save()
 
     def _toggle(self):
         self._expanded = not self._expanded
@@ -166,7 +186,7 @@ class CollapsibleDiffItem(QFrame):
 
 
 class DiffListPanel(QWidget):
-    def __init__(self, diffs: list[dict], parent=None):
+    def __init__(self, diffs: list[dict], on_save=None, parent=None):
         super().__init__(parent)
 
         root = QVBoxLayout(self)
@@ -206,7 +226,7 @@ class DiffListPanel(QWidget):
 
         for i, diff in enumerate(diffs):
             color = DIFF_COLORS[i % len(DIFF_COLORS)]
-            item = CollapsibleDiffItem(diff, color)
+            item = CollapsibleDiffItem(diff, color, on_save=on_save)
             vbox.addWidget(item)
 
         vbox.addStretch()
