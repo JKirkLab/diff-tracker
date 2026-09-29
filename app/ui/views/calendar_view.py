@@ -57,7 +57,7 @@ class CalendarView(QWidget):
                 color: #0F172A;
                 selection-background-color: #3B82F6;
                 selection-color: #FFFFFF;
-                font-size: 11pt;
+                font-size: 13pt;
                 outline: none;
                 gridline-color: #E2E8F0;
             }
@@ -69,7 +69,7 @@ class CalendarView(QWidget):
             QCalendarWidget QToolButton {
                 color: #0F172A;
                 background: transparent;
-                font-size: 13pt;
+                font-size: 15pt;
                 font-weight: 600;
                 border: none;
                 border-radius: 6px;
@@ -87,7 +87,7 @@ class CalendarView(QWidget):
                 color: #0F172A;
                 background: #FFFFFF;
                 border: none;
-                font-size: 13pt;
+                font-size: 15pt;
             }
         """)
 
@@ -115,7 +115,7 @@ class CalendarView(QWidget):
         self._detail_scroll = QScrollArea()
         self._detail_scroll.setFrameShape(QScrollArea.NoFrame)
         self._detail_scroll.setWidgetResizable(True)
-        self._detail_scroll.setFixedHeight(140)
+        self._detail_scroll.setFixedHeight(180)
         self._detail_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self._detail_scroll.setStyleSheet(
             "background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px;"
@@ -153,34 +153,41 @@ class CalendarView(QWidget):
 
         date_hdr = QLabel(d.strftime("%B %d, %Y"))
         f = QFont()
-        f.setPointSize(11)
+        f.setPointSize(13)
         f.setBold(True)
         date_hdr.setFont(f)
         date_hdr.setStyleSheet("color: #0F172A;")
         self._detail_layout.addWidget(date_hdr)
 
         for diff_name, fg, entry in entries:
+            block = QVBoxLayout()
+            block.setSpacing(2)
+
             row = QHBoxLayout()
             row.setSpacing(10)
 
             dot = QFrame()
             dot.setFixedSize(8, 8)
-            dot.setStyleSheet(
-                f"background:{fg}; border-radius:4px;"
-            )
+            dot.setStyleSheet(f"background:{fg}; border-radius:4px;")
             dot.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
             name_lbl = QLabel(f"<b>{diff_name}</b>  ·  Day {entry.day_number}  ·  {entry.step.name}")
-            name_lbl.setStyleSheet("color: #0F172A; font-size: 10pt;")
-            name_lbl.setToolTip(entry.step.description)
+            name_lbl.setStyleSheet("color: #0F172A; font-size: 12pt;")
 
             row.addWidget(dot, 0, Qt.AlignVCenter)
             row.addWidget(name_lbl)
             row.addStretch()
+            block.addLayout(row)
+
+            if entry.step.description:
+                desc_lbl = QLabel(entry.step.description)
+                desc_lbl.setStyleSheet("color: #64748B; font-size: 11pt; padding-left: 18px;")
+                desc_lbl.setWordWrap(True)
+                block.addWidget(desc_lbl)
 
             wrapper = QWidget()
             wrapper.setStyleSheet("background: transparent;")
-            wrapper.setLayout(row)
+            wrapper.setLayout(block)
             self._detail_layout.addWidget(wrapper)
 
         self._detail_layout.addStretch()

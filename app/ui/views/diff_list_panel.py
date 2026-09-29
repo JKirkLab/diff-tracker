@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.ui.dialogs.edit_diff_dialog import EditDiffDialog
 from app.ui.views.timeline_view import TimelineView
 
 DIFF_COLORS = ["#2563EB", "#059669", "#D97706", "#7C3AED", "#DC2626"]
@@ -22,6 +23,7 @@ DIFF_COLORS = ["#2563EB", "#059669", "#D97706", "#7C3AED", "#DC2626"]
 class CollapsibleDiffItem(QFrame):
     def __init__(self, diff: dict, color: str, parent=None):
         super().__init__(parent)
+        self._diff = diff
         self.setStyleSheet(
             "QFrame { background:#FFFFFF; border:1px solid #E2E8F0;"
             " border-radius:10px; }"
@@ -35,7 +37,7 @@ class CollapsibleDiffItem(QFrame):
 
         self._root = QVBoxLayout(self)
         self._root.setContentsMargins(16, 12, 16, 12)
-        self._root.setSpacing(8)
+        self._root.setSpacing(12)
 
         # ── header (always visible) ───────────────────────────────────────
         header = QHBoxLayout()
@@ -47,7 +49,7 @@ class CollapsibleDiffItem(QFrame):
 
         name_lbl = QLabel(diff["name"])
         nf = QFont()
-        nf.setPointSize(11)
+        nf.setPointSize(13)
         nf.setBold(True)
         name_lbl.setFont(nf)
         name_lbl.setStyleSheet("color:#0F172A; border:none;")
@@ -55,12 +57,27 @@ class CollapsibleDiffItem(QFrame):
         day_badge = QLabel(f"Day {max(today_day, 0)}")
         day_badge.setStyleSheet(
             f"background:#F8FAFC; color:{color}; border:1px solid {color};"
-            " border-radius:4px; padding:1px 8px; font-size:8pt; font-weight:600;"
+            " border-radius:4px; padding:1px 8px; font-size:10pt; font-weight:600;"
         )
+
+        edit_btn = QPushButton("Edit")
+        edit_btn.setFixedHeight(26)
+        edit_btn.setCursor(Qt.PointingHandCursor)
+        edit_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent; color: #94A3B8;
+                border: 1px solid #E2E8F0; border-radius: 6px;
+                padding: 0 10px; font-size: 9pt;
+            }
+            QPushButton:hover { color: #3B82F6; border-color: #3B82F6; }
+        """)
+        edit_btn.clicked.connect(self._open_edit)
 
         header.addWidget(self._arrow)
         header.addWidget(name_lbl)
         header.addStretch()
+        header.addWidget(edit_btn)
+        header.addSpacing(6)
         header.addWidget(day_badge)
         self._root.addLayout(header)
 
@@ -79,22 +96,31 @@ class CollapsibleDiffItem(QFrame):
         # ── today's steps ─────────────────────────────────────────────────
         if today_steps:
             for e in today_steps:
+                block = QVBoxLayout()
+                block.setSpacing(1)
+
                 row = QHBoxLayout()
                 dot = QFrame()
                 dot.setFixedSize(6, 6)
-                dot.setStyleSheet(
-                    f"background:{color}; border-radius:3px;"
-                )
+                dot.setStyleSheet(f"background:{color}; border-radius:3px;")
                 dot.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
                 lbl = QLabel(e.step.name)
-                lbl.setStyleSheet("color:#475569; font-size:9pt; border:none;")
+                lbl.setStyleSheet("color:#475569; font-size:11pt; border:none; font-weight:600;")
                 row.addWidget(dot, 0, Qt.AlignVCenter)
                 row.addWidget(lbl)
                 row.addStretch()
-                self._root.addLayout(row)
+                block.addLayout(row)
+
+                if e.step.description:
+                    desc = QLabel(e.step.description)
+                    desc.setStyleSheet("color:#94A3B8; font-size:10pt; border:none; padding-left:14px;")
+                    desc.setWordWrap(True)
+                    block.addWidget(desc)
+
+                self._root.addLayout(block)
         else:
             no = QLabel("No steps today")
-            no.setStyleSheet("color:#CBD5E1; font-size:9pt; border:none;")
+            no.setStyleSheet("color:#CBD5E1; font-size:11pt; border:none;")
             self._root.addWidget(no)
 
         # ── collapsible timeline ──────────────────────────────────────────
@@ -123,11 +149,17 @@ class CollapsibleDiffItem(QFrame):
             widget.mousePressEvent = lambda _e: self._toggle()
         self.mousePressEvent = lambda _e: self._toggle()
 
+    def _open_edit(self):
+        dialog = EditDiffDialog(self._diff, self)
+        if dialog.exec():
+            # updated_dates() available for backend wiring:
+            # dialog.updated_dates() → [(step_id, new_date), ...]
+            pass 
+
     def _toggle(self):
         self._expanded = not self._expanded
         self._arrow.setText("▼" if self._expanded else "▶")
         self._timeline_wrapper.setVisible(self._expanded)
-        # tell parent to recalculate size
         self.updateGeometry()
         if self.parent():
             self.parent().adjustSize()
@@ -146,14 +178,14 @@ class DiffListPanel(QWidget):
         hdr.setContentsMargins(4, 0, 4, 12)
         title = QLabel("Active Diffs")
         tf = QFont()
-        tf.setPointSize(13)
+        tf.setPointSize(15)
         tf.setBold(True)
         title.setFont(tf)
         title.setStyleSheet("color:#0F172A;")
         count = QLabel(f"{len(diffs)}")
         count.setStyleSheet(
             "background:#E2E8F0; color:#64748B; border-radius:10px;"
-            " padding:1px 8px; font-size:9pt; font-weight:600;"
+            " padding:1px 8px; font-size:10pt; font-weight:600;"
         )
         hdr.addWidget(title)
         hdr.addSpacing(8)
@@ -170,7 +202,7 @@ class DiffListPanel(QWidget):
         container = QWidget()
         vbox = QVBoxLayout(container)
         vbox.setContentsMargins(4, 0, 4, 0)
-        vbox.setSpacing(10)
+        vbox.setSpacing(14)
 
         for i, diff in enumerate(diffs):
             color = DIFF_COLORS[i % len(DIFF_COLORS)]

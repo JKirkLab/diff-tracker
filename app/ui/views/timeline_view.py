@@ -5,13 +5,14 @@ from PySide6.QtWidgets import QFrame, QLabel, QScrollArea, QSizePolicy, QWidget
 
 from app.core.models.experiment import ScheduleEntry
 
-_STEP_W  = 180
-_H       = 280
-_MX      = 80    # left/right margin
-_BASE_Y  = 148   # y of the centre line
-_DOT     = 14    # dot diameter
-_LABEL_H = 68
-_DATE_H  = 40
+_STEP_W  = 200
+_H       = 420
+_MX      = 80
+_BASE_Y  = 190
+_DOT     = 16
+_NAME_H  = 44
+_DATE_H  = 26
+_DESC_H  = 36
 
 
 def _lbl(text: str, parent: QWidget, style: str, align=Qt.AlignHCenter) -> QLabel:
@@ -29,7 +30,7 @@ class TimelineView(QScrollArea):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.setFixedHeight(_H + 2)
+        self.setFixedHeight(_H + 4)
         self.setStyleSheet("background: #FFFFFF; border: none;")
 
         n          = len(schedule)
@@ -38,8 +39,6 @@ class TimelineView(QScrollArea):
         today_day  = (today - start_date).days
         total_days = schedule[-1].day_number or 1
 
-        # proportional coordinate system: both dots and the today marker
-        # map day_number → pixel so the red line always aligns with step dots
         x_first = _MX
         x_last  = total_w - _MX
         track_w = x_last - x_first
@@ -60,27 +59,59 @@ class TimelineView(QScrollArea):
             fill.setGeometry(x_first, _BASE_Y, fill_w, 2)
             fill.setStyleSheet("background: #3B82F6; border: none;")
 
-        # ── today marker ─────────────────────────────────────────────────
-        if 0 < today_day <= total_days:
-            tx = x_first + int(track_w * (today_day / total_days))
-            marker = QFrame(canvas)
-            marker.setGeometry(tx, _BASE_Y - 40, 1, 80)
-            marker.setStyleSheet("background: #F43F5E; border: none;")
-            today_lbl = _lbl("Today", canvas,
-                              "color: #F43F5E; font-size: 9pt;",
-                              Qt.AlignHCenter)
-            today_lbl.adjustSize()
-            today_lbl.move(tx - today_lbl.width() // 2, _BASE_Y + 46)
+        # ── steps ─────────────────────────────────────────────────────────
+        # Even steps: desc → name → date stacked ABOVE the track
+        # Odd  steps: date → name → desc stacked BELOW the track
+        # The two rows occupy completely separate vertical regions.
+        GAP = 3
+        dot_top = _BASE_Y - _DOT // 2
 
-        # ── steps ────────────────────────────────────────────────────────
         for i, entry in enumerate(schedule):
             x    = x_first + int(track_w * (entry.day_number / total_days))
             done = entry.date <= today
 
-            # dot (raised above track)
+            col      = "#0F172A" if done else "#94A3B8"
+            wt       = "600"     if done else "400"
+            desc_col = "#64748B" if done else "#CBD5E1"
+            lw       = _STEP_W - 12
+            lx       = x - lw // 2
+
+            if i % 2 == 0:
+                # stack upward from just above the dot
+                date_y = dot_top - GAP - _DATE_H
+                name_y = date_y - GAP - _NAME_H
+                desc_y = name_y - GAP - _DESC_H
+                align  = Qt.AlignBottom | Qt.AlignHCenter
+            else:
+                # stack downward from just below the dot
+                dot_bot = _BASE_Y + _DOT // 2
+                date_y  = dot_bot + GAP
+                name_y  = date_y + _DATE_H + GAP
+                desc_y  = name_y + _NAME_H + GAP
+                align   = Qt.AlignTop | Qt.AlignHCenter
+
+            date_lbl = _lbl(
+                f"Day {entry.day_number}  ·  {entry.date.strftime('%b %d')}",
+                canvas, "color: #94A3B8; font-size: 10pt;")
+            date_lbl.setGeometry(lx, date_y, lw, _DATE_H)
+            date_lbl.setAlignment(align)
+
+            name_lbl = _lbl(entry.step.name, canvas,
+                             f"color:{col}; font-size:11pt; font-weight:{wt};")
+            name_lbl.setGeometry(lx, name_y, lw, _NAME_H)
+            name_lbl.setAlignment(align)
+            if entry.step.description:
+                name_lbl.setToolTip(entry.step.description)
+
+            if entry.step.description:
+                desc_lbl = _lbl(entry.step.description, canvas,
+                                 f"color:{desc_col}; font-size:9pt;")
+                desc_lbl.setGeometry(lx, desc_y, lw, _DESC_H)
+                desc_lbl.setAlignment(align)
+
             dot = QFrame(canvas)
             dot.setFixedSize(_DOT, _DOT)
-            dot.move(x - _DOT // 2, _BASE_Y - _DOT // 2 + 1)
+            dot.move(x - _DOT // 2, dot_top)
             if done:
                 dot.setStyleSheet(
                     f"background: #3B82F6; border-radius: {_DOT//2}px; border: none;")
@@ -90,24 +121,25 @@ class TimelineView(QScrollArea):
                     " border: 2px solid #3B82F6;")
             dot.raise_()
 
-            # step name — above baseline
-            col   = "#0F172A" if done else "#94A3B8"
-            wt    = "600"     if done else "400"
-            name  = _lbl(entry.step.name, canvas,
-                          f"color:{col}; font-size:10pt; font-weight:{wt};")
-            name.setGeometry(x - _STEP_W // 2 + 6,
-                             _BASE_Y - _DOT // 2 - _LABEL_H - 6,
-                             _STEP_W - 12, _LABEL_H)
-            name.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
-
-            # date + day — below baseline
-            meta = _lbl(
-                f"Day {entry.day_number}  ·  {entry.date.strftime('%b %d')}",
-                canvas, "color: #94A3B8; font-size: 9pt;")
-            meta.setGeometry(x - _STEP_W // 2 + 6,
-                             _BASE_Y + _DOT // 2 + 10,
-                             _STEP_W - 12, _DATE_H)
-            meta.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
+        # ── today marker (last so it renders over step labels) ────────────
+        # The marker runs from above the track to near the canvas bottom,
+        # and the "Today" label sits at the very bottom — always clear of
+        # step labels regardless of which row they occupy.
+        if 0 < today_day <= total_days:
+            tx         = x_first + int(track_w * (today_day / total_days))
+            lbl_h      = 16
+            marker_top = _BASE_Y - 40
+            lbl_y      = _H - lbl_h - 4
+            marker     = QFrame(canvas)
+            marker.setGeometry(tx, marker_top, 1, lbl_y - marker_top)
+            marker.setStyleSheet("background: #F43F5E; border: none;")
+            marker.raise_()
+            today_lbl = _lbl("Today", canvas,
+                              "color: #F43F5E; font-size: 9pt;",
+                              Qt.AlignHCenter)
+            today_lbl.adjustSize()
+            today_lbl.move(tx - today_lbl.width() // 2, lbl_y)
+            today_lbl.raise_()
 
         self.setWidget(canvas)
         self.setWidgetResizable(False)

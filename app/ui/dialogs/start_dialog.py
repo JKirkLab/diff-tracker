@@ -93,7 +93,7 @@ class StartDiffDialog(QDialog):
         # Experiment name
         layout.addWidget(QLabel("Experiment name"))
         self._name_edit = QLineEdit()
-        self._name_edit.setPlaceholderText("e.g. Batch 3 — well A1")
+        self._name_edit.setPlaceholderText("e.g. Batch 1")
         layout.addWidget(self._name_edit)
 
         # Start date
@@ -129,7 +129,7 @@ class StartDiffDialog(QDialog):
     def _style_calendar_popup(self):
         cal = self._date_edit.calendarWidget()
 
-        # Kill the default red weekends
+        #remove red weekends
         normal_fmt = QTextCharFormat()
         normal_fmt.setForeground(QColor("#0F172A"))
         cal.setWeekdayTextFormat(Qt.Saturday, normal_fmt)
