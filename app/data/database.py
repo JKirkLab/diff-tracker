@@ -14,13 +14,7 @@ def init_db():
 
     with sqlite3.connect(db_path) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
-        try:
-            conn.execute(
-                "ALTER TABLE experiments ADD COLUMN end_date TEXT NOT NULL DEFAULT '9999-12-31'"
-            )
-        except Exception:
-            pass  
-
+        
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS experiments (
             id INTEGER PRIMARY KEY,
