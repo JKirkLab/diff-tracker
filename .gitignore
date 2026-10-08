@@ -1,5 +1,5 @@
 __pycache__/
 .venv/
 notebooks/
-
+.DS_Store
 *.egg-info/

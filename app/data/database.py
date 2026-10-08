@@ -47,4 +47,19 @@ def init_db():
             FOREIGN KEY (experiment_id, source_step_id) REFERENCES experiment_steps(experiment_id, step_id),
             FOREIGN KEY (experiment_id, target_step_id) REFERENCES experiment_steps(experiment_id, step_id)
         );
+
+        CREATE TABLE IF NOT EXISTS plates (
+            id INTEGER PRIMARY KEY,
+            experiment_id INTEGER NOT NULL,
+            plate_number INTEGER NOT NULL,
+            name TEXT NOT NULL DEFAULT '',
+            A1 TEXT NOT NULL DEFAULT '',
+            A2 TEXT NOT NULL DEFAULT '',
+            A3 TEXT NOT NULL DEFAULT '',
+            B1 TEXT NOT NULL DEFAULT '',
+            B2 TEXT NOT NULL DEFAULT '',
+            B3 TEXT NOT NULL DEFAULT '',
+
+            FOREIGN KEY (experiment_id) REFERENCES experiments(id)
+        );
         """)

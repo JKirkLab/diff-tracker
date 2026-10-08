@@ -101,6 +101,38 @@ def load_experiments() -> list[dict]:
     return diffs
 
 
+def save_plates(exp_id: int, plates: list[dict[str, str]]) -> None:
+    """Replace all plates for an experiment with the given list."""
+    with sqlite3.connect(get_db_path()) as conn:
+        with conn:
+            conn.execute("DELETE FROM plates WHERE experiment_id = ?", (exp_id,))
+            for i, p in enumerate(plates, start=1):
+                conn.execute(
+                    """
+                    INSERT INTO plates (experiment_id, plate_number, name, A1, A2, A3, B1, B2, B3)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        exp_id, i, p.get("name", ""),
+                        p.get("A1", ""), p.get("A2", ""), p.get("A3", ""),
+                        p.get("B1", ""), p.get("B2", ""), p.get("B3", ""),
+                    ),
+                )
+
+
+def load_plates(exp_id: int) -> list[dict[str, str]]:
+    """Returns [{"name": ..., well_id: note, ...}, ...] ordered by plate_number."""
+    with sqlite3.connect(get_db_path()) as conn:
+        rows = conn.execute(
+            "SELECT name, A1, A2, A3, B1, B2, B3 FROM plates WHERE experiment_id = ? ORDER BY plate_number",
+            (exp_id,),
+        ).fetchall()
+    return [
+        {"name": r[0], "A1": r[1], "A2": r[2], "A3": r[3], "B1": r[4], "B2": r[5], "B3": r[6]}
+        for r in rows
+    ]
+
+
 def update_experiment_edges(exp_id, updated_dates):
 
     step_id, delta = updated_dates

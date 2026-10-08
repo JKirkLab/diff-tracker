@@ -117,24 +117,39 @@ class _WellWidget(QWidget):
 
 
 class _PlateTab(QWidget):
-    def __init__(self, notes: dict[str, str] | None = None, parent=None):
+    def __init__(self, plate: dict | None = None, parent=None):
         super().__init__(parent)
-        notes = notes or {}
+        plate = plate or {}
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(0)
+        layout.setSpacing(12)
+
+        name_row = QHBoxLayout()
+        name_lbl = QLabel("Plate name:")
+        name_lbl.setStyleSheet("color: #64748B; font-size: 10pt; border: none;")
+        self._name_edit = QLineEdit(plate.get("name", ""))
+        self._name_edit.setPlaceholderText("e.g. Passage 3")
+        name_row.addWidget(name_lbl)
+        name_row.addWidget(self._name_edit, 1)
+        layout.addLayout(name_row)
 
         grid = QGridLayout()
         grid.setSpacing(16)
 
         self._wells: list[_WellWidget] = []
         for well_id, row, col in _WELLS:
-            well = _WellWidget(well_id, notes.get(well_id, ""))
+            well = _WellWidget(well_id, plate.get(well_id, ""))
             self._wells.append(well)
             grid.addWidget(well, row, col, Qt.AlignHCenter)
 
         layout.addLayout(grid)
+
+    def name(self) -> str:
+        return self._name_edit.text().strip()
+
+    def name_edit(self) -> QLineEdit:
+        return self._name_edit
 
     def well_notes(self) -> dict[str, str]:
         return {w.well_id(): w.note() for w in self._wells}
@@ -210,23 +225,31 @@ class WellPlateDialog(QDialog):
         btn_row.addWidget(save)
         root.addLayout(btn_row)
 
-    def _add_plate(self, notes: dict[str, str] | None = None):
-        if isinstance(notes, bool):
-            notes = {}
-        plate = _PlateTab(notes or {})
-        self._plate_tabs.append(plate)
-        idx = self._tabs.addTab(plate, f"Plate {len(self._plate_tabs)}")
+    def _add_plate(self, plate: dict | None = None):
+        if isinstance(plate, bool):
+            plate = {}
+        tab = _PlateTab(plate or {})
+        self._plate_tabs.append(tab)
+        default_label = f"Plate {len(self._plate_tabs)}"
+        idx = self._tabs.addTab(tab, tab.name() or default_label)
         self._tabs.setCurrentIndex(idx)
+
+        # update tab label live as the user types a name
+        tab.name_edit().textChanged.connect(
+            lambda text, i=idx: self._tabs.setTabText(
+                self._tabs.indexOf(tab), text.strip() or f"Plate {self._tabs.indexOf(tab) + 1}"
+            )
+        )
 
     def _remove_plate(self, idx: int):
         if self._tabs.count() <= 1:
-            return  # always keep at least one plate
+            return
         self._tabs.removeTab(idx)
         del self._plate_tabs[idx]
-        # relabel remaining tabs
         for i in range(self._tabs.count()):
-            self._tabs.setTabText(i, f"Plate {i + 1}")
+            if not self._plate_tabs[i].name():
+                self._tabs.setTabText(i, f"Plate {i + 1}")
 
     def all_plates(self) -> list[dict[str, str]]:
-        """Returns [{well_id: note}, ...] one dict per plate."""
-        return [t.well_notes() for t in self._plate_tabs]
+        """Returns [{"name": ..., "A1": ..., ...}, ...] one dict per plate."""
+        return [{"name": t.name(), **t.well_notes()} for t in self._plate_tabs]

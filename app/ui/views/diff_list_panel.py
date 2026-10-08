@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
 from app.ui.dialogs.edit_diff_dialog import EditDiffDialog
 from app.ui.dialogs.well_plate_dialog import WellPlateDialog
 from app.ui.views.timeline_view import TimelineView
-from app.data.repositories import update_experiment_edges
+from app.data.repositories import update_experiment_edges, load_plates, save_plates
 
 DIFF_COLORS = ["#2563EB", "#059669", "#D97706", "#7C3AED", "#DC2626"]
 
@@ -163,10 +163,10 @@ class CollapsibleDiffItem(QFrame):
         self.mousePressEvent = lambda _e: self._toggle()
 
     def _open_wells(self):
-        dialog = WellPlateDialog(self._diff, parent=self)
+        existing = load_plates(self._diff["id"])
+        dialog = WellPlateDialog(self._diff, existing_plates=existing or None, parent=self)
         if dialog.exec():
-            # wire backend here: dialog.all_plates() → [{well_id: note}, ...]
-            pass
+            save_plates(self._diff["id"], dialog.all_plates())
 
     def _open_edit(self):
         dialog = EditDiffDialog(self._diff, self)
