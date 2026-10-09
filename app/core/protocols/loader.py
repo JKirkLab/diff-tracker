@@ -1,9 +1,13 @@
 import json
+import sys
 from pathlib import Path
 
 from app.core.models.protocol import Step, Edge, DAG, Protocol
 
-TEMPLATE_DIR = Path(__file__).parent / "templates"
+if getattr(sys, "frozen", False):
+    TEMPLATE_DIR = Path(sys._MEIPASS) / "app" / "core" / "protocols" / "templates"
+else:
+    TEMPLATE_DIR = Path(__file__).parent / "templates"
 
 def load_protocol(name: str) -> Protocol:
     
