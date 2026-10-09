@@ -142,6 +142,7 @@ class MainWindow(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
+    app.setStyle("Fusion")
     app.setFont(QFont("Inter", 13))
 
     palette = QPalette()
