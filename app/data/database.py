@@ -1,10 +1,18 @@
+import sys
 from pathlib import Path
 from platformdirs import user_data_dir
 import sqlite3
 
+
 def get_db_path():
-    data_dir = Path(user_data_dir("DiffTracker"))
-    data_dir.mkdir(parents=True, exist_ok=True)
+    if getattr(sys, "frozen", False):
+        # Running as a PyInstaller bundle — DB lives next to the executable,
+        # shared by anyone who runs the app from the same folder.
+        data_dir = Path(sys.executable).parent
+    else:
+        # Running from source during development — per-user data directory.
+        data_dir = Path(user_data_dir("DiffTracker"))
+        data_dir.mkdir(parents=True, exist_ok=True)
 
     return data_dir / "diff_tracker.db"
 
