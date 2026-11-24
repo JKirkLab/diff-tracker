@@ -1,0 +1,142 @@
+{
+  "id": "pre_diff",
+  "name": "Pre Diff Allen Institute Protocol",
+  "description": "Pre Differentiation Allen Institute Protocol Template",
+
+  "steps": [
+    {
+        "id": "split0_d0",
+        "name": "Split 0 — Day 0",
+        "description": "Thaw cells with mTeSR + TZV (2mL)"
+    },
+    {
+        "id": "split0_d1",
+        "name": "Split 0 — Day 1",
+        "description": "Change media with mTeSR only (2mL)"
+    },
+    {
+        "id": "split0_d3",
+        "name": "Split 0 — Day 3",
+        "description": "mTeSR (2mL), check for confluency 70-80% then split"
+    },
+    {
+        "id": "split1_d0",
+        "name": "Split 1 — Day 0",
+        "description": "Seed cells with mTeSR + TZV (2mL)"
+    },
+    {
+        "id": "split1_d1",
+        "name": "Split 1 — Day 1",
+        "description": "Change media with mTeSR only (2mL)"
+    },
+    {
+        "id": "split1_d3",
+        "name": "Split 1 — Day 3",
+        "description": "mTeSR (2mL), check for confluency 70-80% then split"
+    },
+    {
+        "id": "split2_d0",
+        "name": "Split 2 — Day 0",
+        "description": "Seed cells with mTeSR + TZV (2mL)"
+    },
+    {
+        "id": "split2_d1",
+        "name": "Split 2 — Day 1",
+        "description": "Change media with mTeSR only (2mL)"
+    },
+    {
+        "id": "split2_d3",
+        "name": "Split 2 — Day 3",
+        "description": "mTeSR (2mL), check for confluency 70-80% then split"
+    },
+    {
+        "id": "split3_d0",
+        "name": "Split 3 — Day 0",
+        "description": "Seed cells with mTeSR + TZV (2mL)"
+    },
+    {
+        "id": "split3_d1",
+        "name": "Split 3 — Day 1",
+        "description": "Change media with mTeSR only (2mL)"
+    },
+    {
+        "id": "split3_d3",
+        "name": "Split 3 — Day 3",
+        "description": "mTeSR (2mL), check for confluency 70-80% then start differentiation"
+    },
+    {
+        "id": "start",
+        "name": "Start Differentiation",
+        "description": "Replace media with 3 mL ADM + CHIR (7.5 uM)"
+    },
+    {
+        "id": "step_1",
+        "name": "First media change",
+        "description": "Replace media with 3 mL ADM + IWP2 (5 uM) Allen Institute recommends that it be 48 hrs +/- 15 minutes or less."
+    },
+    {
+        "id": "step_2",
+        "name": "Second media change",
+        "description": "Replace media with 3 mL RPMI + B27(-) + Pen/Strep"
+    },
+    {
+        "id": "step_3",
+        "name": "Third media change",
+        "description": "Replace media with 3 mL RPMI + B27(+) + Pen/Strep"
+    },
+    {
+        "id": "step_4",
+        "name": "Media change every other day (1)",
+        "description": "Media change every other day RPMI + B27 (+ insulin) + Pen/Strep"
+    },
+    {
+        "id": "step_5",
+        "name": "Media change every other day (2)",
+        "description": "Media change every other day RPMI + B27 (+ insulin) + Pen/Strep"
+    },
+    {
+        "id": "step_6",
+        "name": "Media change every other day (3)",
+        "description": "Media change every other day RPMI + B27 (+ insulin) + Pen/Strep"
+    },
+    {
+        "id": "step_7",
+        "name": "Media change every other day (4)",
+        "description": "Media change every other day RPMI + B27 (+ insulin) + Pen/Strep"
+    },
+    {
+        "id": "step_8",
+        "name": "Split diff cells",
+        "description": "Split the diff cells 1:1 ratio"
+    },
+    {
+        "id": "step_9",
+        "name": "Selection Process",
+        "description": "Start selection process with Lactate purification"
+    }
+  ],
+
+  "edges": [
+    { "from": "split0_d0", "to": "split0_d1", "days": 1 },
+    { "from": "split0_d1", "to": "split0_d3", "days": 2 },
+    { "from": "split0_d3", "to": "split1_d0", "days": 1 },
+    { "from": "split1_d0", "to": "split1_d1", "days": 1 },
+    { "from": "split1_d1", "to": "split1_d3", "days": 2 },
+    { "from": "split1_d3", "to": "split2_d0", "days": 1 },
+    { "from": "split2_d0", "to": "split2_d1", "days": 1 },
+    { "from": "split2_d1", "to": "split2_d3", "days": 2 },
+    { "from": "split2_d3", "to": "split3_d0", "days": 1 },
+    { "from": "split3_d0", "to": "split3_d1", "days": 1 },
+    { "from": "split3_d1", "to": "split3_d3", "days": 2 },
+    { "from": "split3_d3", "to": "start",     "days": 1 },
+    { "from": "start",     "to": "step_1",    "days": 2 },
+    { "from": "step_1",    "to": "step_2",    "days": 2 },
+    { "from": "step_2",    "to": "step_3",    "days": 2 },
+    { "from": "step_3",    "to": "step_4",    "days": 2 },
+    { "from": "step_4",    "to": "step_5",    "days": 2 },
+    { "from": "step_5",    "to": "step_6",    "days": 2 },
+    { "from": "step_6",    "to": "step_7",    "days": 2 },
+    { "from": "step_7",    "to": "step_8",    "days": 1 },
+    { "from": "step_8",    "to": "step_9",    "days": 5 }
+  ]
+}

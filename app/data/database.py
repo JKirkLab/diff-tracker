@@ -22,14 +22,20 @@ def init_db():
 
     with sqlite3.connect(db_path) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
-        
+
+        try:
+            conn.execute("ALTER TABLE experiments ADD COLUMN created_at TEXT NOT NULL DEFAULT ''")
+        except Exception:
+            pass
+
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS experiments (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
             protocol_id TEXT NOT NULL,
             start_date TEXT NOT NULL,
-            end_date TEXT NOT NULL
+            end_date TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT ''
         );
 
         CREATE TABLE IF NOT EXISTS experiment_steps (

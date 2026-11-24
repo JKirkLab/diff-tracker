@@ -25,11 +25,9 @@ from app.data.repositories import load_experiments, save_experiment
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, protocol, protocol_key: str):
+    def __init__(self):
         super().__init__()
         self.setWindowTitle("Diff Tracker")
-        self._protocol = protocol
-        self._protocol_key = protocol_key
         self._diffs = load_experiments()
 
         central = QWidget()
@@ -60,23 +58,24 @@ class MainWindow(QMainWindow):
         """)
         self._new_btn.clicked.connect(self._new_diff)
 
-        clear_btn = QPushButton("Clear DB")
-        clear_btn.setFixedHeight(40)
-        clear_btn.setCursor(Qt.PointingHandCursor)
-        clear_btn.setStyleSheet("""
-            QPushButton {
-                background:transparent; color:#94A3B8;
-                border:1px solid #E2E8F0; border-radius:8px;
-                padding:0 14px; font-size:11pt;
-            }
-            QPushButton:hover { color:#EF4444; border-color:#EF4444; }
-        """)
-        clear_btn.clicked.connect(self._clear_db)
+        # LOCAL TESTING ONLY — uncomment to show Clear DB button
+        # clear_btn = QPushButton("Clear DB")
+        # clear_btn.setFixedHeight(40)
+        # clear_btn.setCursor(Qt.PointingHandCursor)
+        # clear_btn.setStyleSheet("""
+        #     QPushButton {
+        #         background:transparent; color:#94A3B8;
+        #         border:1px solid #E2E8F0; border-radius:8px;
+        #         padding:0 14px; font-size:11pt;
+        #     }
+        #     QPushButton:hover { color:#EF4444; border-color:#EF4444; }
+        # """)
+        # clear_btn.clicked.connect(self._clear_db)
 
         header.addWidget(title)
         header.addStretch()
-        header.addWidget(clear_btn)
-        header.addSpacing(8)
+        # header.addWidget(clear_btn)  # LOCAL TESTING ONLY
+        # header.addSpacing(8)
         header.addWidget(self._new_btn)
         root.addLayout(header)
 
@@ -128,14 +127,15 @@ class MainWindow(QMainWindow):
         self._rebuild_panels()
 
     def _new_diff(self):
-        dialog = StartDiffDialog(self._protocol.name, self)
+        dialog = StartDiffDialog(self)
         if dialog.exec() != QDialog.Accepted:
             return
         name = dialog.name()
         start_date = dialog.start_date()
-        schedule = compute_schedule(self._protocol, start_date)
+        protocol = load_protocol(dialog.protocol_key())
+        schedule = compute_schedule(protocol, start_date)
         end_date = schedule[-1].date
-        save_experiment(name, self._protocol, start_date, end_date)
+        save_experiment(name, protocol, start_date, end_date, dialog.start_datetime())
         self._diffs = load_experiments()
         self._rebuild_panels()
 
@@ -181,10 +181,8 @@ def main():
             { background:transparent; }
     """)
 
-    protocol_key = "allen"
-    protocol = load_protocol(protocol_key)
     init_db()
-    window = MainWindow(protocol, protocol_key)
+    window = MainWindow()
     window.showMaximized()
     sys.exit(app.exec())
 

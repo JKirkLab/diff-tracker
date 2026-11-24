@@ -17,7 +17,7 @@
     {
         "id": "step_2",
         "name": "Second media change",
-        "description": "Replace media with 3 mL RPMI + B27(+) + Pen/Strep"
+        "description": "Replace media with 3 mL RPMI + B27(-) + Pen/Strep"
     },
     {
         "id": "step_3",

@@ -6,11 +6,11 @@ from app.data.database import get_db_path
 from app.core.models.protocol import Protocol, Step, Edge, DAG
 
 
-def save_experiment(name: str, protocol: Protocol, start_date: date, end_date: date) -> int:
+def save_experiment(name: str, protocol: Protocol, start_date: date, end_date: date, created_at: str) -> int:
     with sqlite3.connect(get_db_path()) as conn:
         cursor = conn.execute(
-            "INSERT INTO experiments (name, protocol_id, start_date, end_date) VALUES (?, ?, ?, ?)",
-            (name, protocol.id, start_date.isoformat(), end_date.isoformat()),
+            "INSERT INTO experiments (name, protocol_id, start_date, end_date, created_at) VALUES (?, ?, ?, ?, ?)",
+            (name, protocol.id, start_date.isoformat(), end_date.isoformat(), created_at),
         )
         
 
@@ -67,11 +67,11 @@ def load_experiments() -> list[dict]:
 
     with sqlite3.connect(get_db_path()) as conn:
         rows = conn.execute(
-            "SELECT id, name, protocol_id, start_date FROM experiments WHERE end_date >= ?",
+            "SELECT id, name, protocol_id, start_date, created_at FROM experiments WHERE end_date >= ?",
             (today,),
         ).fetchall()
 
-        for exp_id, exp_name, protocol_id, start_date_str in rows:
+        for exp_id, exp_name, protocol_id, start_date_str, created_at in rows:
             steps = {}
             edges = []
             for step_id, step_name, desc in conn.execute(
@@ -96,6 +96,7 @@ def load_experiments() -> list[dict]:
                 "protocol": protocol,
                 "schedule": schedule,
                 "start_date": start,
+                "created_at": created_at,
             })
 
     return diffs

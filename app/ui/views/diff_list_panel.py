@@ -50,12 +50,28 @@ class CollapsibleDiffItem(QFrame):
         self._arrow.setStyleSheet(f"color:{color}; font-size:10pt; border:none;")
         self._arrow.setFixedWidth(16)
 
+        name_col = QVBoxLayout()
+        name_col.setSpacing(1)
+
         name_lbl = QLabel(diff["name"])
         nf = QFont()
         nf.setPointSize(13)
         nf.setBold(True)
         name_lbl.setFont(nf)
         name_lbl.setStyleSheet("color:#0F172A; border:none;")
+        name_col.addWidget(name_lbl)
+
+        created_at = diff.get("created_at", "")
+        if created_at:
+            try:
+                from datetime import datetime as dt
+                ts = dt.fromisoformat(created_at)
+                created_str = ts.strftime("Started %Y-%m-%d %H:%M")
+            except Exception:
+                created_str = created_at
+            created_lbl = QLabel(created_str)
+            created_lbl.setStyleSheet("color:#94A3B8; font-size:9pt; border:none;")
+            name_col.addWidget(created_lbl)
 
         day_badge = QLabel(f"Day {max(today_day, 0)}")
         day_badge.setStyleSheet(
@@ -85,7 +101,7 @@ class CollapsibleDiffItem(QFrame):
         wells_btn.clicked.connect(self._open_wells)
 
         header.addWidget(self._arrow)
-        header.addWidget(name_lbl)
+        header.addLayout(name_col)
         header.addStretch()
         header.addWidget(edit_btn)
         header.addSpacing(4)

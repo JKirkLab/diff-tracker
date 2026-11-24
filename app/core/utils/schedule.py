@@ -7,9 +7,11 @@ from app.core.models.protocol import Protocol
 def compute_schedule(protocol: Protocol, start_date) -> list[ScheduleEntry]:
     """Walk the protocol DAG and return one ScheduleEntry per step, in order."""
     edge_map = {e.source: e for e in protocol.dag.edges}
+    targets = {e.target for e in protocol.dag.edges}
+    root_id = next(sid for sid in protocol.dag.steps if sid not in targets)
 
     entries: list[ScheduleEntry] = []
-    current_id = "start"
+    current_id = root_id
     current_date = start_date
 
     while current_id:

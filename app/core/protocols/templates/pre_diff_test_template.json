@@ -1,0 +1,82 @@
+{
+  "id": "pre_diff_test",
+  "name": "Pre Diff Splits Only",
+  "description": "Pre Differentiation splits only — no differentiation steps",
+
+  "steps": [
+    {
+        "id": "split0_d0",
+        "name": "Split 0 — Day 0",
+        "description": "Thaw cells with mTeSR + TZV (2mL)"
+    },
+    {
+        "id": "split0_d1",
+        "name": "Split 0 — Day 1",
+        "description": "Change media with mTeSR only (2mL)"
+    },
+    {
+        "id": "split0_d3",
+        "name": "Split 0 — Day 3",
+        "description": "mTeSR (2mL), check for confluency 70-80% then split"
+    },
+    {
+        "id": "split1_d0",
+        "name": "Split 1 — Day 0",
+        "description": "Seed cells with mTeSR + TZV (2mL)"
+    },
+    {
+        "id": "split1_d1",
+        "name": "Split 1 — Day 1",
+        "description": "Change media with mTeSR only (2mL)"
+    },
+    {
+        "id": "split1_d3",
+        "name": "Split 1 — Day 3",
+        "description": "mTeSR (2mL), check for confluency 70-80% then split"
+    },
+    {
+        "id": "split2_d0",
+        "name": "Split 2 — Day 0",
+        "description": "Seed cells with mTeSR + TZV (2mL)"
+    },
+    {
+        "id": "split2_d1",
+        "name": "Split 2 — Day 1",
+        "description": "Change media with mTeSR only (2mL)"
+    },
+    {
+        "id": "split2_d3",
+        "name": "Split 2 — Day 3",
+        "description": "mTeSR (2mL), check for confluency 70-80% then split"
+    },
+    {
+        "id": "split3_d0",
+        "name": "Split 3 — Day 0",
+        "description": "Seed cells with mTeSR + TZV (2mL)"
+    },
+    {
+        "id": "split3_d1",
+        "name": "Split 3 — Day 1",
+        "description": "Change media with mTeSR only (2mL)"
+    },
+    {
+        "id": "split3_d3",
+        "name": "Split 3 — Day 3",
+        "description": "mTeSR (2mL), check for confluency 70-80% then start differentiation"
+    }
+  ],
+
+  "edges": [
+    { "from": "split0_d0", "to": "split0_d1", "days": 1 },
+    { "from": "split0_d1", "to": "split0_d3", "days": 2 },
+    { "from": "split0_d3", "to": "split1_d0", "days": 1 },
+    { "from": "split1_d0", "to": "split1_d1", "days": 1 },
+    { "from": "split1_d1", "to": "split1_d3", "days": 2 },
+    { "from": "split1_d3", "to": "split2_d0", "days": 1 },
+    { "from": "split2_d0", "to": "split2_d1", "days": 1 },
+    { "from": "split2_d1", "to": "split2_d3", "days": 2 },
+    { "from": "split2_d3", "to": "split3_d0", "days": 1 },
+    { "from": "split3_d0", "to": "split3_d1", "days": 1 },
+    { "from": "split3_d1", "to": "split3_d3", "days": 2 }
+  ]
+}
