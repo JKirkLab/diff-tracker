@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import date
+from datetime import date, timedelta
 
 from app.core.utils.schedule import compute_schedule
 from app.data.database import get_db_path
@@ -61,14 +61,14 @@ def save_experiment(name: str, protocol: Protocol, start_date: date, end_date: d
 
 def load_experiments() -> list[dict]:
     """Return active experiments (end_date >= today) as UI-ready dicts."""
-    today = date.today().isoformat()
+    cutoff = (date.today() - timedelta(days=90)).isoformat()
 
     diffs = []
 
     with sqlite3.connect(get_db_path()) as conn:
         rows = conn.execute(
-            "SELECT id, name, protocol_id, start_date, created_at FROM experiments WHERE end_date >= ?",
-            (today,),
+            "SELECT id, name, protocol_id, start_date, created_at FROM experiments WHERE start_date >= ?",
+            (cutoff,),
         ).fetchall()
 
         for exp_id, exp_name, protocol_id, start_date_str, created_at in rows:
